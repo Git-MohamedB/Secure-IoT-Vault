@@ -1,42 +1,60 @@
-# Secure-IoT-Vault (ESP32)
+<div align="right">
+  <a href="./README.md"><img src="https://img.shields.io/badge/Lang-🇬🇧_English-blue?style=for-the-badge" alt="English"></a>
+  <a href="./README.fr.md"><img src="https://img.shields.io/badge/Lang-🇫🇷_Français-lightgrey?style=for-the-badge" alt="Français"></a>
+</div>
 
-![Vue d'ensemble du système](images/demo.png)
+# Secure-IoT-Vault
 
-## Description
-**Secure-IoT-Vault** est une preuve de concept (PoC) d'un système de contrôle d'accès cyber-physique. 
-L'objectif de ce projet est de démontrer comment sécuriser un système embarqué critique à ressources limitées (microcontrôleur) en évitant les failles de sécurité classiques (mots de passe en clair, attaques par force brute).
+Cyber-physical access control proof of concept built on an ESP32 DevKit (`code_source.c`) combining a 4x4 matrix keypad, I2C 16x2 LCD, SG90 servo lock, FNV-1a PIN verification, and non-blocking anti-brute-force protection.
 
-Ce projet fait le pont entre le **développement logiciel (C++)**, la **cybersécurité algorithmique**, et la **robotique/électronique**.
+![System overview](images/demo.png)
 
-## Fonctionnalités Cyber & Logicielles
+## Context & Problem
 
-### 1. Zero-Knowledge Proof (Hachage FNV-1a)
-Le code PIN n'est jamais stocké en clair dans la mémoire de l'ESP32. Le système utilise l'algorithme de hachage non-cryptographique FNV-1a (XOR et arithmétique modulaire) pour comparer les empreintes numériques.
+Entry-level microcontroller lock prototypes frequently hardcode plaintext PIN strings in firmware and stall execution with blocking `delay()` loops during lockouts.
 
-![Validation du Hash et Ouverture](images/code_et_visuel.png)
+This PoC demonstrates two baseline defensive patterns within constrained MCU firmware: avoiding plaintext secret literals in comparisons and enforcing an attack cooldown using non-blocking timestamp checks.
 
-### 2. Défense Anti-Brute Force
-Implémentation d'un "lockout" temporel. Après 3 tentatives échouées consécutives, le système ignore les entrées matérielles pendant 10 secondes (gestion via `millis()` pour ne pas bloquer le processeur).
+## Technical Architecture
 
-![Blocage du système après 3 échecs](images/systeme_bloque.png)
+```mermaid
+flowchart LR
+    KP["4x4 Matrix Keypad (GPIO 19,18,5,17 / 16,4,0,2)"] -->|"getKey()"| MCU["ESP32 Main Loop (code_source.c)"]
+    MCU -->|"millis() <= finBlocage?"| LOCK{"Locked Out?"}
+    LOCK -->|"Yes"| IGN["Ignore keypad input"]
+    LOCK -->|"No, 4 digits entered"| HASH["FNV-1a 32-bit Hash (calculerHash)"]
+    HASH -->|"Serial 115200 bps"| LOG["Audit Terminal"]
+    HASH -->|"Digest == HASH_SECRET"| OK["Unlock SG90 Servo (90 deg, GPIO 13) + LCD OK"]
+    HASH -->|"Mismatch"| ERR["Increment tentatives + LCD Error"]
+    ERR -->|"tentatives >= 3"| CD["Set 10 s lockout (millis() + 10000)"]
+```
 
-### 3. Audit en Temps Réel
-Remontée des logs (Inputs et Hash calculés) via liaison série pour la supervision.
+![Brute-force lockout after 3 failed attempts](images/systeme_bloque.png)
 
-## Stack Technique & Matériel
-* **Microcontrôleur :** ESP32 (DevKit)
-* **Langage :** C++ (Framework Arduino)
-* **Composants physiques :** * Servomoteur SG90 (Simule le verrou physique)
-  * Écran LCD 16x2 (via module I2C)
-  * Clavier Matriciel 4x4 (Membrane Keypad)
+## Engineering Choices, Security & Performance
 
-## Comment tester la simulation (Wokwi)
-Ce projet est entièrement simulé et testable directement dans le navigateur via Wokwi.
+- **No plaintext PIN in comparison logic**: `verifierSecurite()` computes the 32-bit FNV-1a hash (`offset=2166136261`, `prime=16777619`) of the 4-character input and compares it against `HASH_SECRET` (`4257489661`).
+- **Non-blocking anti-brute-force (`millis()`)**: After 3 consecutive failures, `estBloque` triggers a 10-second lockout timed with `millis()`. Using timestamp comparison instead of a 10 s `delay()` keeps the main loop responsive without stalling MCU tasks.
+- **Hardware I/O & Serial audit**: Logs every attempted code and computed hash over UART (`115200` baud) while driving the `0x27` I2C 16x2 LCD (`SDA=21`, `SCL=22`) and the SG90 actuator on GPIO 13 (`0` deg locked, `90` deg unlocked).
 
-1. Cliquez sur le lien de simulation : *(Insère ici ton lien Wokwi "Share")*
-2. Lancez la simulation (Bouton Play).
-3. Entrez le code correct (`1234` par défaut) pour voir l'actionneur se déverrouiller.
-4. Entrez un code erroné 3 fois de suite pour tester le verrouillage de sécurité anti-bruteforce.
+## Quick Start
 
-## Architecture du Code
-Le code est structuré de manière non-bloquante pour permettre au microcontrôleur de traiter les entrées du clavier tout en vérifiant les timeouts de sécurité en arrière-plan.
+### Hardware / Simulation Components
+
+- ESP32 DevKit v1
+- 4x4 membrane keypad wired to `{19, 18, 5, 17}` (rows) and `{16, 4, 0, 2}` (cols)
+- 16x2 I2C LCD (`0x27`, pins 21/22)
+- SG90 servo motor on GPIO 13
+
+### Run Firmware
+
+1. Open `code_source.c` in Arduino IDE, PlatformIO, or a Wokwi ESP32 project.
+2. Install required Arduino libraries: `Keypad`, `LiquidCrystal_I2C`, and `ESP32Servo`.
+3. Compile and flash to an ESP32 (or start the Wokwi simulation).
+4. Enter the default demo PIN (`1234`) to rotate the servo to `90` degrees, or enter 3 wrong codes to verify the 10-second lockout.
+
+## Future Improvements
+
+- Replace FNV-1a (a fast non-cryptographic hash vulnerable to offline guessing on 4-digit PIN spaces) with salted SHA-256 / HMAC using mbedTLS on ESP32 and remove plaintext input from UART audit logs in production mode.
+- Persist failed attempt counters and lockout state in ESP32 NVS (flash) so power cycling cannot reset brute-force limits.
+- Remove remaining `delay(2000)` / `delay(3000)` calls in `verifierSecurite()` in favor of a full finite-state machine, and add a `wokwi.toml` / `diagram.json` for one-click headless CI simulation.
