@@ -5,7 +5,9 @@
 
 # Secure-IoT-Vault
 
-Cyber-physical access control proof of concept built on an ESP32 DevKit (`code_source.c`) combining a 4x4 matrix keypad, I2C 16x2 LCD, SG90 servo lock, FNV-1a PIN verification, and non-blocking anti-brute-force protection.
+Access control proof of concept built and **simulated in Wokwi** on a virtual ESP32 (`code_source.c`), combining a 4x4 matrix keypad, I2C 16x2 LCD, SG90 servo lock, FNV-1a PIN verification, and non-blocking anti-brute-force protection.
+
+> **Note:** This project was developed and tested entirely inside the **Wokwi** online simulator (no physical ESP32 hardware was used).
 
 ![System overview](images/demo.png)
 
@@ -39,18 +41,18 @@ flowchart LR
 
 ## Quick Start
 
-### Hardware / Simulation Components
+### Simulated Components (Wokwi)
 
-- ESP32 DevKit v1
-- 4x4 membrane keypad wired to `{19, 18, 5, 17}` (rows) and `{16, 4, 0, 2}` (cols)
-- 16x2 I2C LCD (`0x27`, pins 21/22)
-- SG90 servo motor on GPIO 13
+- Virtual ESP32 DevKit v1 (Wokwi simulator)
+- Virtual 4x4 membrane keypad wired to `{19, 18, 5, 17}` (rows) and `{16, 4, 0, 2}` (cols)
+- Virtual 16x2 I2C LCD (`0x27`, pins 21/22)
+- Virtual SG90 servo motor on GPIO 13
 
-### Run Firmware
+### Run Simulation
 
-1. Open `code_source.c` in Arduino IDE, PlatformIO, or a Wokwi ESP32 project.
-2. Install required Arduino libraries: `Keypad`, `LiquidCrystal_I2C`, and `ESP32Servo`.
-3. Compile and flash to an ESP32 (or start the Wokwi simulation).
+1. Open `code_source.c` in a Wokwi ESP32 project (or Arduino IDE / PlatformIO).
+2. Add the libraries: `Keypad`, `LiquidCrystal_I2C`, and `ESP32Servo`.
+3. Start the Wokwi simulation.
 4. Enter the default demo PIN (`1234`) to rotate the servo to `90` degrees, or enter 3 wrong codes to verify the 10-second lockout.
 
 ## Future Improvements

@@ -5,7 +5,9 @@
 
 # Secure-IoT-Vault
 
-Preuve de concept de contrôle d'accès cyber-physique sur ESP32 DevKit (`code_source.c`) combinant clavier matriciel 4x4, écran LCD I2C 16x2, servomoteur SG90, vérification par hachage FNV-1a et temporisation anti-bruteforce non bloquante.
+Preuve de concept de contrôle d'accès conçue et **simulée sous Wokwi** sur ESP32 virtuel (`code_source.c`), combinant clavier matriciel 4x4, écran LCD I2C 16x2, servomoteur SG90, vérification par hachage FNV-1a et temporisation anti-bruteforce non bloquante.
+
+> **Note :** Ce projet a été développé et testé intégralement dans le simulateur en ligne **Wokwi** (sans matériel physique ESP32).
 
 ![Vue d'ensemble du système](images/demo.png)
 
@@ -39,18 +41,18 @@ flowchart LR
 
 ## Démarrage Rapide
 
-### Composants requis
+### Composants simulés (Wokwi)
 
-- ESP32 DevKit v1
-- Clavier matriciel 4x4 sur `{19, 18, 5, 17}` (lignes) et `{16, 4, 0, 2}` (colonnes)
-- Écran LCD 16x2 I2C (`0x27`, broches 21/22)
-- Servomoteur SG90 sur GPIO 13
+- ESP32 DevKit v1 virtuel (simulateur Wokwi)
+- Clavier matriciel 4x4 virtuel sur `{19, 18, 5, 17}` (lignes) et `{16, 4, 0, 2}` (colonnes)
+- Écran LCD 16x2 I2C virtuel (`0x27`, broches 21/22)
+- Servomoteur SG90 virtuel sur GPIO 13
 
-### Exécution
+### Exécution de la simulation
 
-1. Ouvrir `code_source.c` dans Arduino IDE, PlatformIO ou un projet ESP32 sous Wokwi.
-2. Installer les bibliothèques `Keypad`, `LiquidCrystal_I2C` et `ESP32Servo`.
-3. Compiler et téléverser sur ESP32 (ou lancer la simulation Wokwi).
+1. Ouvrir `code_source.c` dans un projet ESP32 sous Wokwi (ou Arduino IDE / PlatformIO).
+2. Ajouter les bibliothèques `Keypad`, `LiquidCrystal_I2C` et `ESP32Servo`.
+3. Lancer la simulation Wokwi.
 4. Saisir le code démo par défaut (`1234`) pour déverrouiller le servo à `90` degrés, ou entrer 3 codes faux pour déclencher le blocage de 10 secondes.
 
 ## Pistes d'Amélioration
