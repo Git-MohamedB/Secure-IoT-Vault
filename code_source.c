@@ -28,7 +28,8 @@ const uint32_t HASH_SECRET = 4257489661;
 // Variables Anti-Brute Force
 int tentatives = 0;
 bool estBloque = false;
-unsigned long finBlocage = 0;
+unsigned long debutBlocage = 0;
+const unsigned long DUREE_BLOCAGE_MS = 10000UL;
 
 // Algo Hachage FNV-1a
 uint32_t calculerHash(String input) {
@@ -53,7 +54,7 @@ void setup() {
 void loop() {
   // 1. Vérification du blocage (Anti-Brute Force)
   if (estBloque) {
-    if (millis() > finBlocage) {
+    if (millis() - debutBlocage >= DUREE_BLOCAGE_MS) {
       estBloque = false;
       tentatives = 0;
       resetEcran();
@@ -77,10 +78,10 @@ void loop() {
 
 void verifierSecurite() {
   uint32_t hashCalcule = calculerHash(codeSaisi);
-  
-  // Log Terminal (Audit)
-  Serial.print("Input: "); Serial.print(codeSaisi);
-  Serial.print(" | Hash: "); Serial.println(hashCalcule);
+
+  // Log Terminal (Audit sans code PIN en clair)
+  Serial.print("Hash: "); Serial.print(hashCalcule);
+  Serial.println(hashCalcule == HASH_SECRET ? " | Status: VALID" : " | Status: INVALID");
 
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -105,7 +106,7 @@ void verifierSecurite() {
       // Activation Blocage si 3 erreurs
       if (tentatives >= 3) {
         estBloque = true;
-        finBlocage = millis() + 10000; // Bloque 10s
+        debutBlocage = millis(); // Bloque 10s
         lcd.clear();
         lcd.print("SYSTEME BLOQUE");
         lcd.setCursor(0, 1);
